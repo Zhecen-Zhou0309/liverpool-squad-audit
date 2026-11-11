@@ -1,0 +1,7 @@
+{
+  "python": "3.12.6",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "machine": "arm64",
+  "dependency_lock": "requirements.lock",
+  "scope": "Package versions are pinned; this is not a container image or a wheel-hash lock."
+}
