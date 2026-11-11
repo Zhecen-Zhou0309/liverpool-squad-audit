@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "source": {
+    "url": "https://www.football-data.co.uk/mmz4281/2627/E0.csv",
+    "sha256": "d598a5f681e1a9a4acf9dad9fb203b68da6f67e2d195678dbe99e95fbba14593",
+    "retrieved_at": "2026-11-11T23:47:52.061813+00:00",
+    "local_path": "data/local/E0-2627.csv",
+    "availability": "Live upstream URL may change; retain a private exact copy of the original input."
+  },
+  "analysis": {
+    "team": "Liverpool",
+    "season": "2026–27",
+    "as_of": "2026-11-11",
+    "competition": "Premier League",
+    "exclude_red": false,
+    "liverpool_matches": 10
+  },
+  "outputs": {
+    "report.md": "def4d870d17f7ba4a8d2173f61c54e368af6905387b719934ac043448921c2d7",
+    "report.json": "0dfd630b4c9270b4ac2014ba24f31fe2fbdef05ed94c58ef83ee4a53930db48d",
+    "match_ids.csv": "1ed0a52630d72dc1213e0ab6603dcc263c83c2cfc7851ea2695684124ae67f8c"
+  }
+}
