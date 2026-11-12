@@ -1,10 +1,17 @@
 # Changelog
 
+## v0.1.1 — 2026-11-11
+
+- Translate the dashboard, role labels, reports, validation errors, CLI messages and documentation into English.
+- Preserve the existing commit history and the `v0.1.0` baseline.
+- Refresh output hashes for the English reports while retaining the same raw input and numeric analysis.
+- Regenerate source and history archives and English report artifacts.
+
 ## v0.1.0 — 2026-11-11
 
-- 导入首版比赛统计、可解释规则、球员位置分钟检查、报告导出和本地界面。
-- 锁定参考 Python 版本与传递依赖，提供 Makefile 运行入口。
-- 新增固定输入和输出 SHA-256 验证，记录每次运行的代码与环境。
-- 15 项离线测试覆盖分析与复现失败场景。
-- CI 固定 Action 提交版本，并配置依赖检查与界面启动测试；首次上传后才能验证远程执行结果。
-- 真实数据范围为截至 2026-11-11 的英超比赛；缺少球员出场、伤停与角色证据时不生成确定的补强位置结论。
+- Import match statistics, explainable rules, player-role minute checks, report exports and the local dashboard.
+- Pin the reference Python interpreter and transitive dependencies; add Makefile entry points.
+- Verify frozen input/output SHA-256 hashes and record code and environment provenance for each run.
+- Add 15 offline tests covering analysis and reproduction failures.
+- Pin CI action revisions and configure dependency and dashboard-startup checks. Remote execution must be verified after the first upload.
+- Analyze Premier League data through November 11, 2026. Withhold definitive recruitment-position conclusions when player-role, appearance and availability evidence is missing.

@@ -77,7 +77,7 @@ class AuditTests(unittest.TestCase):
         rows = [raw_match((date(2026, 8, 23) + timedelta(days=i)).strftime("%d/%m/%Y"), AxG="0.1", HxG="3") for i in range(8)]
         signals = analyze(self.load(rows))["signals"]
         self.assertIn("xg_for_per_match", {s["id"] for s in signals})
-        self.assertTrue(all("待录像" in s["status"] for s in signals))
+        self.assertTrue(all("validate with video" in s["status"] for s in signals))
 
     def test_multirole_minutes_cannot_double_count(self):
         records = self.load([raw_match()])
@@ -92,7 +92,7 @@ class AuditTests(unittest.TestCase):
         text = self.appearance_csv([[records[0]["match_id"], "1", "Synthetic A", "RW", 90, "https://example.org/test"]])
         report = analyze(records, appearances=read_appearances(text, records))
         self.assertEqual(report["roles"]["complete_matches"], 0)
-        self.assertTrue(all(r["review_priority"] == "证据不足" for r in report["roles"]["rows"]))
+        self.assertTrue(all(r["review_priority"] == "Insufficient evidence" for r in report["roles"]["rows"]))
 
     def test_complete_lineups_allow_concentration_review(self):
         records = self.load([raw_match((date(2026, 8, 23) + timedelta(days=i)).strftime("%d/%m/%Y")) for i in range(8)])
@@ -106,7 +106,7 @@ class AuditTests(unittest.TestCase):
         report = analyze(records, appearances=read_appearances(self.appearance_csv(rows), records))
         self.assertEqual(report["roles"]["complete_matches"], 8)
         rw = next(r for r in report["roles"]["rows"] if r["role"] == "RW")
-        self.assertEqual(rw["review_priority"], "优先核查轮换")
+        self.assertEqual(rw["review_priority"], "Review rotation first")
         self.assertEqual(rw["top_share"], 1)
 
     def test_empty_summary_preserves_missing_values(self):

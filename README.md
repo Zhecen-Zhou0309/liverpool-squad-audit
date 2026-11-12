@@ -1,24 +1,24 @@
 # Liverpool Squad Audit
 
-以利物浦为案例的、可解释的足球阵容诊断小项目。
+An explainable football squad analysis project using Liverpool FC as a case study.
 
-**第一阶段：2026–27 赛季截至 2026-11-11，先分析英超比赛，再检查位置覆盖，建立补强判断所需的证据。**
+**Phase One: analyze Premier League matches from the 2026–27 season through November 11, 2026, examine role coverage, and build evidence for recruitment decisions.**
 
-本仓库为第一版分析工具，不声称已完成利物浦的真实位置级补强结论。
+This is an initial analysis tool. It does not yet provide a complete, evidence-backed verdict on which positions Liverpool should recruit.
 
-## 已有功能
+## Features
 
-- 下载真实的英超比赛 CSV，核验字段、日期和重复比赛，并记录来源、下载时间及 SHA-256。
-- 统一主客场视角，计算进失球、积分、xG、xGA、射门和单次射门 xG。
-- 同期联赛对照、最近 5/8 场、主客场筛选，以及排除任一方出现红牌的整场比赛。
-- 透明的比赛表现规则，每条线索展示指标、比较基准、触发阈值和解释限制。
-- 导入真实球员位置分钟，检查多位置重复计算，统计完整比赛的位置使用和轮换集中度。
-- 导出 Markdown/JSON 报告，以及用于采集阵容数据的比赛标识。
-- 无第三方依赖的命令行分析核心、单元测试，以及 Streamlit 本地界面。
+- Download real Premier League match data; validate fields, dates and duplicate matches; record the source, retrieval time and SHA-256.
+- Normalize home and away perspectives and calculate goals, points, xG, xGA, shots and xG per shot.
+- Compare Liverpool with other teams over the same period; filter by the last five or eight matches, venue, or red-card status.
+- Show transparent performance rules with their metrics, benchmarks, thresholds and interpretation limits.
+- Import actual player-role minutes, detect double counting across roles, and inspect rotation concentration in complete matches.
+- Export Markdown and JSON reports, plus match IDs for appearance-data collection.
+- Run the analysis core and tests using the Python standard library, or explore results in a local Streamlit dashboard.
 
-## 快速运行
+## Quick start
 
-参考环境为 Python 3.12.6（见 `.python-version`）。macOS/Linux 在项目目录执行：
+The reference interpreter is Python 3.12.6, recorded in `.python-version`. On macOS or Linux, run these commands in the project directory:
 
 ```bash
 python3 -m venv .venv
@@ -28,134 +28,134 @@ python scripts/fetch_data.py --manifest reproducibility/baseline.json
 python -m streamlit run app.py
 ```
 
-Windows PowerShell 激活命令为 `.venv\Scripts\Activate.ps1`，其他步骤相同。也可直接用虚拟环境里的 Python。
+On Windows PowerShell, activate the environment with `.venv\Scripts\Activate.ps1`, or invoke its Python executable directly.
 
-项目不会请求 API 密钥或付费账户。首次下载需要网络；之后可使用本地快照离线分析。
+No API key or paid account is required. The initial download requires network access; a local snapshot can then be analyzed offline.
 
-完整复现流程：
+To test and reproduce the reference report:
 
 ```bash
 make test
 make reproduce
 ```
 
-`make reproduce` 会验证输入快照与三个输出文件的 SHA-256，并生成独立的运行版本记录。直接执行 `python scripts/fetch_data.py` 会下载源站当前文件；带 `--manifest` 才会要求与本版本的固定输入一致。源站若已修改历史记录，请恢复原始数据备份，不能仅靠网址重建旧版本。
+`make reproduce` verifies the input snapshot and three output files against their SHA-256 hashes, then records the code revision and runtime environment separately. Running `python scripts/fetch_data.py` without `--manifest` downloads the current upstream file. The manifest option requires an exact match with the frozen input for this version.
 
-依赖锁记录传递依赖的包版本，未固定操作系统镜像和平台 wheel；详见 [复现说明](docs/REPRODUCIBILITY.md)。
+If upstream data changes, restore the archived input rather than treating the latest download as the old snapshot. The dependency lock pins package versions, but not operating-system images or platform wheels. See [Reproducibility](docs/REPRODUCIBILITY.md).
 
-### 不安装界面，只生成报告
+### Generate reports without the dashboard
 
 ```bash
-python3 scripts/fetch_data.py
+python3 scripts/fetch_data.py --manifest reproducibility/baseline.json
 python3 scripts/report.py
 python3 scripts/report.py --exclude-red --output reports/no-red
 ```
 
-输出为 `reports/report.md`、`reports/report.json`、`reports/match_ids.csv`。`--as-of YYYY-MM-DD` 可设为同赛季的更早日期。
+Outputs are `reports/report.md`, `reports/report.json` and `reports/match_ids.csv`. Use `--as-of YYYY-MM-DD` for an earlier cutoff within the same season.
 
-下载失败可从[数据源](https://www.football-data.co.uk/mmz4281/2627/E0.csv)手动保存到 `data/local/E0-2627.csv`，或在界面上传相同格式的 CSV。不要把另一个赛季改名当成当前赛季数据。
+If the download fails, save the [source CSV](https://www.football-data.co.uk/mmz4281/2627/E0.csv) to `data/local/E0-2627.csv`, or upload a file in the same format in the dashboard. Do not substitute a different season.
 
-## 阵容数据怎么补
+## Add appearance data
 
-比赛 CSV 没有球员出场、伤停或战术角色，因此第一版默认将位置级判断标为“证据不足”。
+The match CSV does not contain player appearances, injuries or tactical roles. Position-level assessments therefore default to **Insufficient evidence**.
 
-1. 生成报告或在界面下载 `match_ids.csv`。
-2. 复制 `data/templates/appearances.csv`。
-3. 根据可靠比赛记录，为每位出场球员填入实际位置、常规时间分钟和来源链接。
-4. 上传出场文件，或运行：
+1. Generate a report or download `match_ids.csv` from the dashboard.
+2. Copy `data/templates/appearances.csv`.
+3. Use reliable match records to enter each player's actual role, regulation-time minutes and source URL.
+4. Upload the appearance file, or run:
 
 ```bash
 python3 scripts/report.py --appearances path/to/appearances.csv
 ```
 
-字段：
-
-| 字段 | 含义 |
+| Field | Meaning |
 |---|---|
-| match_id | 使用程序输出的比赛标识，不自行改写 |
-| player_id | 稳定球员 ID；同名球员不要合并 |
-| player_name | 姓名 |
-| role | GK/CB/LB/RB/DM/CM/AM/LW/RW/ST |
-| minutes | 在该位置的常规时间分钟，大于 0 且不超过 90 |
-| source_url | 支持这条记录的比赛记录或标注来源 |
+| match_id | Use an ID exported by the program without changing it |
+| player_id | Stable player identifier; do not merge different players with the same name |
+| player_name | Player name |
+| role | GK / CB / LB / RB / DM / CM / AM / LW / RW / ST |
+| minutes | Regulation-time minutes in this role, greater than 0 and no greater than 90 |
+| source_url | A traceable source supporting this record |
 
-如果同一球员先踢边后卫再踢后腰，应拆为两行且分钟之和不超过 90。同一场同一球员同一位置的多段出场先合并。只录入首发名单不等于完整出场数据；不要用报名位置代替实际比赛角色。
+Split minutes when a player changes role; their total across roles must not exceed 90 in one match. Combine separate segments in the same role before importing. A starting lineup alone is not a complete appearance record, and a registered position is not necessarily the player's match role.
 
-双方无红牌、全队分钟总和为 990 的比赛才计入完整比赛。该检查只是分钟完整性的最低要求，无法识别来源中本身的错误。红牌时段尚未重建，不会用于位置集中度判断。
+Only matches with no red cards and 990 recorded team minutes count as complete. This is a minimum completeness check, not independent verification of the source. Red-card timelines have not been reconstructed, so those matches are excluded from role-concentration checks.
 
-## 如何解读规则
+## Interpret the rules
 
-规则只产生**待核查线索**，不是经过训练的预测模型或因果推断：
+Rules produce **signals for review**, not trained predictions or causal conclusions.
 
-| 线索 | 当前触发规则 |
+| Signal | Current trigger |
 |---|---|
-| 机会创造 | 场均 xG 低于其他球队同期均值的 90% |
-| 机会限制 | 场均 xGA 高于其他球队同期均值的 110% |
-| 射门质量 | xG/射门低于其他球队同期值的 90% |
-| 位置轮换集中 | 主力占该位置分钟至少 85%；至少 8 场完整记录且覆盖所选无红牌比赛的 80%；该位置也须出现至少 8 场 |
+| Chance creation | xG per match below 90% of the other-team benchmark |
+| Chance prevention | xGA per match above 110% of the other-team benchmark |
+| Shot quality | xG per shot below 90% of the other-team benchmark |
+| Concentrated role usage | One player supplies at least 85% of role minutes; at least eight complete matches cover 80% of selected eligible matches; the role appears in at least eight complete matches |
 
-前三条分别要求对应指标至少有 8 场有效比赛。门槛是首版可审查的启发式参数，未做显著性检验或预测验证。
+Each of the first three rules requires eight valid matches for its own metric. These are reviewable initial heuristics, not significance tests or validated predictive thresholds.
 
-- 缺失值不是 0。xG 差只使用两边 xG 都有效的同场记录。
-- 最近 N 场先选取，再排除红牌比赛，避免改变“最近 N 场”的含义。
-- 参照为其他球队同期记录的场次加权均值，不是积分榜强队标准；含其对利物浦的记录，未校正赛程强弱。
-- 不同比赛或不同数据商的 xG 模型不能随意混合。本项目保持同一数据源口径，源站未给出具体模型版本。
-- 主力分钟集中可能源于能力、伤停、教练选择或阵型；未出场的替补不能当作不存在。
-- CB/CM 等多人共同承担的角色，主力份额按该角色全部分钟计算，不直接代表替补人数。
-- 没触发规则不表示没有缺陷。球队 xGA 高也不能自动归因给中卫或门将。
+- Missing values are not zero. xG differentials use matches with valid xG for both sides.
+- Recent-N matches are selected before red-card exclusions, preserving the meaning of the window.
+- The benchmark is weighted by other teams' match appearances, includes their matches against Liverpool, and is not adjusted for opponent strength.
+- Keep xG model definitions consistent. This project uses one provider, which does not identify a specific model version in its file.
+- Concentrated minutes may reflect ability, availability, tactics or selection. Unused backups are not necessarily incapable.
+- For shared roles such as CB or CM, shares use all minutes in the role and do not directly measure backup depth.
+- An absence of signals does not prove that the squad has no weaknesses. Team xGA cannot automatically be attributed to a center-back or goalkeeper.
 
-完整的方法边界和后续路线见 [docs/methodology.md](docs/methodology.md)。
+See [Methodology](docs/methodology.md) for the decision framework and remaining work.
 
-## 项目结构
+## Project structure
 
 ```text
-app.py                    本地交互界面
-audit.py                  数据校验、统计、规则和报告核心
-scripts/fetch_data.py     公开比赛数据下载与来源记录
-scripts/report.py         无依赖报告导出
-data/templates/           球员位置分钟模板
-data/local/               本地数据，不提交 Git
-docs/methodology.md       方法说明与后续计划
-tests/test_audit.py        数据正确性和规则边界测试
+app.py                    Local dashboard
+audit.py                  Validation, statistics, rules and reporting
+scripts/fetch_data.py     Source download and provenance
+scripts/report.py         Report export without third-party dependencies
+scripts/reproduce.py      Frozen-input and output verification
+data/templates/           Player-role minute template
+data/local/               Local inputs, excluded from Git
+reproducibility/           Baseline hashes and reference environment
+docs/                     Methodology, reproduction and upload guides
+tests/                    Analysis and reproduction checks
 ```
 
-## 验证
+## Validation
 
 ```bash
 python3 -m unittest discover -s tests -v
 ```
 
-测试使用明确命名的合成球员和比赛，不用于真实分析。
+Tests use explicitly named synthetic players and matches, never as evidence about Liverpool.
 
-## 上传到 GitHub
+## Publish to GitHub
 
-本项目已在本地初始化 Git，并将初始功能导入和可复现性改进分别提交。要保留这些历史，请使用当前本地项目文件夹，或从 Git bundle 克隆；网页上传文件与普通源码 ZIP 不包含这些提交历史。
+The local project already contains Git history, with initial features imported separately and subsequent reproducibility improvements committed individually. Use this folder or clone the Git bundle to preserve that history. Web uploads and ordinary source ZIP files do not include it.
 
-在 [GitHub 新建仓库](https://github.com/new?name=liverpool-squad-audit)，Owner 选择 `Zhecen-Zhou0309`，名称为 `liverpool-squad-audit`。选择可见性，不初始化 README、License 或 `.gitignore`，然后创建空仓库。
+Create an [empty GitHub repository](https://github.com/new?name=liverpool-squad-audit) under `Zhecen-Zhou0309`, named `liverpool-squad-audit`. Choose its visibility and leave README, license and `.gitignore` initialization disabled.
 
-在当前本地项目目录执行：
+From the existing local repository:
 
 ```bash
 git remote -v
 git push -u origin main
-git push origin v0.1.0
+git push origin v0.1.1
 ```
 
-当前本地项目的 origin 已设为 `https://github.com/Zhecen-Zhou0309/liverpool-squad-audit.git`；从 bundle 克隆时需先用 `git remote set-url origin` 改成这个地址。若普通源码 ZIP 解压后运行 `git status` 提示不是仓库，说明它不含历史，请改用 bundle。
+The local origin is configured as `https://github.com/Zhecen-Zhou0309/liverpool-squad-audit.git`. A clone from the bundle needs `git remote set-url origin` before pushing. If `git status` reports that an extracted source ZIP is not a repository, use the bundle to restore history.
 
-命令行登录和 GitHub App 连接分别管理。若 push 要求认证，可先创建空仓库，再通过 GitHub Desktop 登录、添加当前本地仓库并推送；不要用账号密码代替 Git 的 HTTPS 认证。详见 [GitHub 上传指南](docs/GITHUB.md)。
+System Git authentication is separate from the connected GitHub app. If push requires authentication, use GitHub Desktop or a configured SSH key or credential manager. See the [GitHub guide](docs/GITHUB.md).
 
-上传前先看 `git status`：本地原始数据、虚拟环境、密钥与生成报告已通过 `.gitignore` 排除。发布的是独立项目仓库；本版无需 GitHub Pages。Python 界面通过本地命令启动。
+Check `git status` before publishing. Raw data, virtual environments, credentials and generated reports are excluded by `.gitignore`. This is an independent repository; GitHub Pages is not needed to run the Python dashboard locally.
 
-后续开发流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。每个 commit 对应一个可解释的变化；可复现性由代码版本、环境、数据和运行流程共同保证。
+See [Contributing](CONTRIBUTING.md) for future changes. Each commit should explain a verifiable change; reproducibility also requires a preserved input and a recorded environment.
 
-## 来源
+## Sources
 
-- [Football-Data.co.uk 英格兰数据](https://www.football-data.co.uk/englandm.php)
-- [2026–27 英超 CSV](https://www.football-data.co.uk/mmz4281/2627/E0.csv)
-- [字段说明与上游来源](https://www.football-data.co.uk/notes.txt)
-- [利物浦官方赛程](https://www.liverpoolfc.com/matches/mens-team/fixtures)
+- [Football-Data.co.uk: England data](https://www.football-data.co.uk/englandm.php)
+- [2026–27 Premier League CSV](https://www.football-data.co.uk/mmz4281/2627/E0.csv)
+- [Field definitions and upstream acknowledgements](https://www.football-data.co.uk/notes.txt)
+- [Liverpool FC official fixtures](https://www.liverpoolfc.com/matches/mens-team/fixtures)
 
-下载器仅使用比赛结果和统计，忽略源文件里的赔率字段。数据为第三方提供；源码许可不覆盖第三方数据。打包的源码不含原始比赛 CSV。
+The analysis reads results and match statistics and ignores odds fields. Third-party data is not covered by the source-code license. Source archives exclude the raw match CSV.
 
-本项目与利物浦俱乐部无隶属关系。
+This independent project is not affiliated with Liverpool FC.

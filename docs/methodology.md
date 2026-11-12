@@ -1,56 +1,56 @@
-# 方法说明与第一阶段路线
+# Methodology and Phase One roadmap
 
-## 目标
+## Objective
 
-输入同一时间范围的比赛、出场、球员角色与可用性数据，输出“哪些位置值得优先核查补强、缺少什么能力、有哪些证据与替代解释”。第二阶段再把这些能力画像用于潜力球员与成熟球员筛选。
+Combine matches, appearances, player roles and availability over a consistent period to identify roles that warrant recruitment review, the capabilities they lack, and the supporting evidence and alternative explanations. Phase Two will use those capability profiles to assess prospects and established players.
 
-当前版本实现数据入口、球队表现分析和位置分钟集中度；真实的伤停、替补能力、事件区域与角色适配数据尚未接入，故不能完成位置级引援判断。
+The current version implements input validation, team-performance analysis and role-minute concentration. Verified availability, backup capability, event locations and tactical fit are not yet integrated, so it cannot complete a position-level recruitment assessment.
 
-## 范围
+## Scope
 
-- 球队：Liverpool 男足。
-- 赛季：2026–27。
-- 默认截止：2026-11-11（含当天已完成比赛）。
-- 竞赛：第一版仅英超，不把欧战和杯赛混入同一均值。
-- 结果：描述性统计、规则线索、证据覆盖，不输出未经校准的“补强评分”或置信概率。
+- Team: Liverpool men's first team.
+- Season: 2026–27.
+- Default cutoff: November 11, 2026, including completed matches on that date.
+- Competition: Premier League only; cup and European performances are not pooled into the same benchmark.
+- Output: descriptive statistics, review signals and evidence coverage, without uncalibrated recruitment scores or confidence probabilities.
 
-## 第一版已经支持的证据链
+## Current evidence chain
 
-1. 比赛是否完成、是否在截止日期内、是否为正确赛事？
-2. 球队创造/限制射门机会的表现，相对于同期联赛参照如何？
-3. 换用最近 N 场、只看主客场或排除红牌整场后，观察是否改变？
-4. 球员实际位置分钟是否完整，是否过度集中在某一人？
-5. 若证据仍缺失，保留“证据不足”，不生成确定位置的引援建议。
+1. Verify that matches are completed, in scope and from the correct competition.
+2. Compare chance creation and prevention with other teams over the same period.
+3. Inspect sensitivity to recent-match windows, venue and red-card exclusions.
+4. Check appearance completeness and concentration in actual match roles.
+5. Keep an assessment at **Insufficient evidence** when the required information is unavailable.
 
-## 从“线索”到“补强建议”尚需完成的部分
+## Work needed to support recruitment recommendations
 
-### A. 人员覆盖
+### A. Squad coverage
 
-补齐每场首发、换人、角色分钟，并核实分析截止时点的一线队与可用替补名单。未出场不代表不能胜任，也可能是战术选择；只有报名位置不足以判断实战角色。
+Collect starting lineups, substitutions and role minutes, and verify the first-team and available-backup roster at the cutoff. Not appearing may reflect selection rather than inability. Registered positions alone are insufficient.
 
-在独立球员名单与角色胜任度基础上，评估多位置球员的替补安排。同一个人不能在同一情境中同时算作两个位置的可用替补。
+Assess backup assignments using a separate roster and role-capability evidence. One versatile player cannot cover two simultaneous vacancies in the same scenario.
 
-### B. 可用性与负荷
+### B. Availability and workload
 
-区分伤病、停赛、轮休、未入选等原因，记录生效日期与来源。不能根据缺席反推伤病。评估负荷时需要加入欧战/杯赛，但表现比较仍按赛事或难度分层。
+Distinguish injuries, suspension, rest and non-selection, with effective dates and traceable sources. Do not infer injury from absence. Include European and cup workloads when assessing load, while keeping performance comparisons stratified by competition or difficulty.
 
-### C. 能力与战术责任
+### C. Capability and tactical responsibility
 
-事件数据可支持：向前推进、禁区接应、机会创造、争顶、转换防守参与等。对各位置按实际任务设置指标；防守事件次数要考虑控球率及机会，不简单用“抢断多 = 防守强”。
+Event data can support assessment of progression, box receiving, chance creation, aerial work and transition defending. Choose metrics for the actual role. Defensive event counts depend on possession and opportunity; more tackles do not automatically mean better defending.
 
-区域与序列数据不全时，依靠可追溯的录像标注。记录进攻/防守阶段、比分状态、对手组织方式、相关球员与片段时间。低位防守、转换和定位球不可仅由全场 xGA 区分。
+Where event locations or sequences are unavailable, use traceable video annotations. Record the phase, score state, opposition structure, involved players and clip timestamp. Full-match xGA cannot distinguish low-block, transition and set-piece problems by itself.
 
-### D. 决策
+### D. Decisions
 
-仅当比赛问题重复出现、角色缺口得到阵容证据支持、并且战术/可用性等替代解释得到检查时，才生成：
+Only propose recruitment when repeated match problems are supported by role and squad evidence and tactical or availability explanations have been examined. A recommendation should state:
 
-- 待补位置及角色，例如“能在压迫下出球并提供回追覆盖的中场角色”。
-- 缺口性质：首发升级、轮换深度、角色互补或接班规划。
-- 证据列表、样本范围与仍未解决的解释。
-- 核查/补强优先级；数值评分须另做参数敏感性和历史回测。
+- The position and role, such as a midfielder who can progress possession under pressure and provide recovery coverage.
+- The gap type: starting-quality upgrade, rotation depth, complementary role or succession planning.
+- Supporting evidence, sample range and unresolved explanations.
+- Review or recruitment priority; numeric scoring requires separate sensitivity analysis and historical validation.
 
-## 验证设计
+## Validation design
 
-程序测试覆盖：主客场视角、缺失值、截止日期、红牌状态未知、近期筛选顺序、最小样本、重复与非法数值、多位置分钟重复、部分阵容数据，以及完整阵容数据的规则行为。
+Program tests cover perspective reversal, missing values, cutoffs, unknown red-card status, recent-window ordering, sample thresholds, duplicates, invalid numbers, overlapping role minutes, partial lineups and complete appearance records. Reproduction tests verify exact inputs and outputs and deliberate mismatch failures.
 
-足球判断验证应由后续历史赛季回测和人工复核完成。不能用同一赛季后来的引援倒推早期“正确答案”；所有输入应固定当时可得的时间戳，避免信息泄漏。
+Football judgments still require historical evaluation and human review. Do not use subsequent transfers to construct an earlier answer. Freeze information to what was available at the assessment date to avoid leakage.

@@ -14,9 +14,9 @@ DEFAULT_AS_OF = date(2026, 11, 11)
 SEASON_START = date(2026, 8, 1)
 SEASON_END = date(2027, 6, 30)
 ROLES = {
-    "GK": "门将", "CB": "中后卫", "LB": "左后卫", "RB": "右后卫",
-    "DM": "防守中场", "CM": "中前卫", "AM": "进攻中场",
-    "LW": "左边锋", "RW": "右边锋", "ST": "中锋",
+    "GK": "Goalkeeper", "CB": "Center-back", "LB": "Left-back", "RB": "Right-back",
+    "DM": "Defensive midfielder", "CM": "Central midfielder", "AM": "Attacking midfielder",
+    "LW": "Left winger", "RW": "Right winger", "ST": "Striker",
 }
 MIN_MATCHES = 8
 SOURCE_URL = "https://www.football-data.co.uk/mmz4281/2627/E0.csv"
@@ -28,22 +28,22 @@ def number(value, label, *, integer=False):
     try:
         result = float(value)
     except (TypeError, ValueError) as exc:
-        raise ValueError(f"{label} 必须为数字") from exc
+        raise ValueError(f"{label} must be numeric") from exc
     if not math.isfinite(result) or result < 0 or (integer and not result.is_integer()):
-        raise ValueError(f"{label} 必须为非负{'整数' if integer else '有限数字'}")
+        raise ValueError(f"{label} must be a nonnegative {'integer' if integer else 'finite number'}")
     return int(result) if integer else result
 
 
 def read_matches(path: Path | str, as_of=DEFAULT_AS_OF):
     """Read football-data.co.uk E0 CSV; keep both perspectives for benchmarks."""
     if not SEASON_START <= as_of <= SEASON_END:
-        raise ValueError("截止日期须位于 2026-08-01 至 2027-06-30")
+        raise ValueError("The cutoff date must fall between 2026-08-01 and 2027-06-30")
     records, seen = [], set()
     with Path(path).open(encoding="utf-8-sig", newline="") as file:
         reader = csv.DictReader(file)
         required = {"Div", "Date", "HomeTeam", "AwayTeam", "FTHG", "FTAG"}
         if not required <= set(reader.fieldnames or []):
-            raise ValueError("比赛 CSV 缺少字段：" + ", ".join(sorted(required - set(reader.fieldnames or []))))
+            raise ValueError("Match CSV is missing fields: " + ", ".join(sorted(required - set(reader.fieldnames or []))))
         for line, row in enumerate(reader, 2):
             if not any(row.values()):
                 continue
@@ -54,23 +54,23 @@ def read_matches(path: Path | str, as_of=DEFAULT_AS_OF):
                 try:
                     played = datetime.strptime(raw_date, "%d/%m/%y").date()
                 except ValueError as exc:
-                    raise ValueError(f"第 {line} 行比赛日期无效") from exc
+                    raise ValueError(f"Invalid match date on row {line}") from exc
             if played < SEASON_START or played > min(as_of, SEASON_END):
                 continue
             if row["Div"].strip() != "E0":
-                raise ValueError(f"第 {line} 行不是英超 E0 数据")
+                raise ValueError(f"Row {line} is not Premier League E0 data")
             home, away = row["HomeTeam"].strip(), row["AwayTeam"].strip()
             if not home or not away or home == away:
-                raise ValueError(f"第 {line} 行球队名称无效")
-            hg = number(row["FTHG"], "主队进球", integer=True)
-            ag = number(row["FTAG"], "客队进球", integer=True)
+                raise ValueError(f"Invalid team names on row {line}")
+            hg = number(row["FTHG"], "Home goals", integer=True)
+            ag = number(row["FTAG"], "Away goals", integer=True)
             if hg is None and ag is None:  # scheduled match, not a 0–0 result
                 continue
             if hg is None or ag is None:
-                raise ValueError(f"第 {line} 行比分不完整")
+                raise ValueError(f"Incomplete score on row {line}")
             match_id = f"{played.isoformat()}|{home}|{away}"
             if match_id in seen:
-                raise ValueError(f"重复比赛：{match_id}")
+                raise ValueError(f"Duplicate match: {match_id}")
             seen.add(match_id)
             hr, ar = (number(row.get(k), k, integer=True) for k in ("HR", "AR"))
             for team, opponent, venue, gf, ga, own, opp in (
@@ -92,10 +92,10 @@ def read_matches(path: Path | str, as_of=DEFAULT_AS_OF):
                 for suffix in ("for", "against"):
                     shots, sot = record[f"shots_{suffix}"], record[f"sot_{suffix}"]
                     if shots is not None and sot is not None and sot > shots:
-                        raise ValueError(f"{match_id} 射正次数超过射门次数")
+                        raise ValueError(f"Shots on target exceed shots in {match_id}")
                 records.append(record)
     if not any(r["team"] == TEAM for r in records):
-        raise ValueError("所选范围没有 Liverpool 的已完成比赛；请核对赛季和数据文件")
+        raise ValueError("No completed Liverpool matches in this range; check the season and input file")
     return sorted(records, key=lambda r: (r["date"], r["match_id"], r["team"]))
 
 
@@ -124,7 +124,7 @@ def read_appearances(text, matches):
     reader = csv.DictReader(io.StringIO(text.lstrip("\ufeff")))
     required = {"match_id", "player_id", "player_name", "role", "minutes", "source_url"}
     if not required <= set(reader.fieldnames or []):
-        raise ValueError("出场 CSV 缺少字段：" + ", ".join(sorted(required - set(reader.fieldnames or []))))
+        raise ValueError("Appearance CSV is missing fields: " + ", ".join(sorted(required - set(reader.fieldnames or []))))
     valid = {r["match_id"] for r in matches if r["team"] == TEAM}
     seen, records, totals, match_totals, names = set(), [], defaultdict(float), defaultdict(float), {}
     for line, row in enumerate(reader, 2):
@@ -132,29 +132,29 @@ def read_appearances(text, matches):
             continue
         row = {k: (v or "").strip() for k, v in row.items() if k is not None}
         if row["match_id"] not in valid:
-            raise ValueError(f"第 {line} 行 match_id 不属于截止日期内的利物浦比赛")
+            raise ValueError(f"Row {line} has a match_id outside Liverpool's in-scope matches")
         if row["role"] not in ROLES:
-            raise ValueError(f"第 {line} 行位置须为：{', '.join(ROLES)}")
+            raise ValueError(f"Row {line} must use one of these roles: {', '.join(ROLES)}")
         if not row["player_id"] or not row["player_name"]:
-            raise ValueError(f"第 {line} 行缺少球员标识或姓名")
+            raise ValueError(f"Row {line} is missing a player ID or name")
         if row["player_id"] in names and names[row["player_id"]] != row["player_name"]:
-            raise ValueError(f"第 {line} 行同一 player_id 对应不同姓名")
+            raise ValueError(f"Row {line} assigns different names to the same player_id")
         names[row["player_id"]] = row["player_name"]
         if not row["source_url"].startswith(("https://", "http://")):
-            raise ValueError(f"第 {line} 行须提供可追溯的来源 URL")
-        minutes = number(row["minutes"], "出场分钟")
+            raise ValueError(f"Row {line} requires a traceable source URL")
+        minutes = number(row["minutes"], "Appearance minutes")
         if minutes is None or minutes <= 0 or minutes > 90:
-            raise ValueError(f"第 {line} 行分钟须大于 0 且不超过 90")
+            raise ValueError(f"Minutes on row {line} must be greater than 0 and no greater than 90")
         key = (row["match_id"], row["player_id"], row["role"])
         if key in seen:
-            raise ValueError(f"第 {line} 行重复球员位置；请先合并同一位置的分钟")
+            raise ValueError(f"Duplicate player-role entry on row {line}; combine minutes in the same role first")
         seen.add(key)
         totals[key[:2]] += minutes
         match_totals[key[0]] += minutes
         if totals[key[:2]] > 90.01:
-            raise ValueError(f"第 {line} 行同一球员多位置分钟之和超过 90，可能重复计算")
+            raise ValueError(f"Player minutes across roles exceed 90 on row {line}; check for double counting")
         if match_totals[key[0]] > 990.1:
-            raise ValueError(f"第 {line} 行球队总分钟超过 11×90")
+            raise ValueError(f"Team minutes exceed 11 x 90 on row {line}")
         records.append({**row, "minutes": minutes})
     return records
 
@@ -186,8 +186,8 @@ def role_audit(appearances, matches):
             "role": role, "name": name, "players_used": len(by_player),
             "role_matches": len(role_matches), "minutes": total,
             "most_used": ordered[0][0][1] if ordered else None,
-            "top_share": share, "review_priority": "优先核查轮换" if concentrated else "常规核查" if enough else "证据不足",
-            "evidence": "主力承担该位置至少 85% 分钟；需补充替补能力和可用性证据" if concentrated else "仅统计已完整录入、双方无红牌的比赛；未使用球员不等于无法胜任",
+            "top_share": share, "review_priority": "Review rotation first" if concentrated else "Routine review" if enough else "Insufficient evidence",
+            "evidence": "One player accounts for at least 85% of role minutes; assess backup capability and availability" if concentrated else "Only complete matches without red cards are included; unused players may still be capable backups",
         })
     return {"complete_matches": len(complete), "eligible_matches": len(eligible), "coverage": coverage, "rows": rows}
 
@@ -197,10 +197,10 @@ def analyze(records, as_of=DEFAULT_AS_OF, *, exclude_red=False, venue="ALL", las
     own_all = [r for r in records if r["team"] == TEAM and r["date"] <= as_of.isoformat()]
     if last_n is not None:
         if last_n <= 0:
-            raise ValueError("最近场数须大于 0")
+            raise ValueError("The recent-match count must be greater than 0")
         own_all = own_all[-last_n:]
     if venue not in {"ALL", "H", "A"}:
-        raise ValueError("主客场须为 ALL、H 或 A")
+        raise ValueError("Venue must be ALL, H or A")
     start = own_all[0]["date"] if own_all else as_of.isoformat()
     def keep(r):
         return r["date"] <= as_of.isoformat() and r["date"] >= start and (venue == "ALL" or r["venue"] == venue) and (not exclude_red or r["red_card_match"] is False)
@@ -209,9 +209,9 @@ def analyze(records, as_of=DEFAULT_AS_OF, *, exclude_red=False, venue="ALL", las
     summary, benchmark = summarize(own), summarize(peers)
     signals = []
     for field, factor, direction, title, interpretation in (
-        ("xg_for_per_match", 0.9, "low", "机会创造值得核查", "复核进攻组织、推进与接应角色；无法仅凭球队 xG 指定需要引进的位置"),
-        ("xg_against_per_match", 1.1, "high", "限制对手机会值得核查", "复核转换保护、禁区防守和整体站位；球队 xGA 不能归因给某一位后卫"),
-        ("xg_per_shot", 0.9, "low", "射门质量值得核查", "复核射门位置和进攻选择；低单次射门 xG 不代表中锋终结能力差"),
+        ("xg_for_per_match", 0.9, "low", "Review chance creation", "Review attacking structure, progression and receiving roles; team xG alone cannot identify a recruitment position"),
+        ("xg_against_per_match", 1.1, "high", "Review chance prevention", "Review transition protection, box defending and team positioning; team xGA cannot be attributed to one defender"),
+        ("xg_per_shot", 0.9, "low", "Review shot quality", "Review shot locations and attacking decisions; low xG per shot does not establish poor striker finishing"),
     ):
         count_key = field.replace("_per_match", "") + "_n" if field.endswith("_per_match") else field + "_n"
         actual, base = summary[field], benchmark[field]
@@ -221,54 +221,54 @@ def analyze(records, as_of=DEFAULT_AS_OF, *, exclude_red=False, venue="ALL", las
         triggered = actual < base * factor if direction == "low" else actual > base * factor
         if triggered:
             signals.append({"id": field, "title": title, "actual": actual, "benchmark": base,
-                            "rule": f"{'低于' if direction == 'low' else '高于'}其他球队同期均值的 {factor:.0%}",
-                            "interpretation": interpretation, "status": "描述性线索，待录像和角色数据验证"})
+                            "rule": f"{'Below' if direction == 'low' else 'Above'} {factor:.0%} of the other-team benchmark",
+                            "interpretation": interpretation, "status": "Descriptive signal; validate with video and role data"})
     return {
         "team": TEAM, "season": "2026–27", "as_of": as_of.isoformat(),
         "filters": {"exclude_red": exclude_red, "venue": venue, "last_n": last_n},
         "summary": summary, "benchmark": benchmark, "matches": own, "signals": signals,
         "roles": role_audit(appearances or [], own),
         "limits": [
-            "仅英超；杯赛、欧战负荷尚未纳入。红牌筛选排除整场，不能重建 11 对 11 时段。",
-            "其他球队同期均值按球队场次加权；包含对阵利物浦的记录，未校正对手强弱、比分状态、赛程和战术。",
-            "xG 为数据源的模型输出，不是预期比分。缺失值保留为空，绝不当作 0。",
-            "8 场门槛与 90%/110% 阈值是可审查的启发式规则，未经预测验证，不是显著性或因果结论。",
-            "位置轮换集中不等于人员不足；伤停、替补能力、阵型与事件区域证据仍需补齐。",
+            "Premier League only; cup and European workloads are excluded. The red-card filter removes whole matches, not individual 11-v-11 periods.",
+            "The other-team benchmark is weighted by team appearances and includes matches against Liverpool. Opponent strength, score state, scheduling and tactics are not adjusted.",
+            "xG is the provider's model output, not a predicted score. Missing values remain missing rather than becoming zero.",
+            "The eight-match minimum and 90%/110% thresholds are reviewable heuristics, not validated predictions, significance tests or causal conclusions.",
+            "Concentrated role usage does not establish a squad shortage; availability, backup capability, formation and event-location evidence are still needed.",
         ],
         "source_url": SOURCE_URL,
     }
 
 
 def fmt(value, digits=2):
-    return "缺失" if value is None else f"{value:.{digits}f}"
+    return "Missing" if value is None else f"{value:.{digits}f}"
 
 
 def to_markdown(report):
     s = report["summary"]
     filters = report["filters"]
-    scope = "赛季至今" if filters["last_n"] is None else f"最近 {filters['last_n']} 场"
-    venue = {"ALL": "全部主客场", "H": "主场", "A": "客场"}[filters["venue"]]
-    red = "排除出现红牌的整场比赛" if filters["exclude_red"] else "包含红牌比赛"
-    lines = [f"# 利物浦阵容诊断 · {report['season']}", "", f"截止日期：{report['as_of']}（含当天已完成比赛）", "",
-             f"筛选：{scope}；{venue}；{red}。", "",
-             f"样本：{s['matches']} 场，{s['wins']} 胜 {s['draws']} 平 {s['losses']} 负。", "",
-             "| 指标 | 利物浦 | 其他球队同期均值 | 有效比赛数（利物浦） |", "|---|---:|---:|---:|"]
-    for field, name in (("goals_for", "场均进球"), ("goals_against", "场均失球"), ("xg_for", "场均 xG"), ("xg_against", "场均 xGA"), ("shots_for", "场均射门")):
+    scope = "Season to date" if filters["last_n"] is None else f"Last {filters['last_n']} matches"
+    venue = {"ALL": "All venues", "H": "Home", "A": "Away"}[filters["venue"]]
+    red = "Exclude matches with red cards" if filters["exclude_red"] else "Include matches with red cards"
+    lines = [f"# Liverpool Squad Audit · {report['season']}", "", f"Cutoff: {report['as_of']} (including completed matches on this date)", "",
+             f"Filters: {scope}; {venue}; {red}.", "",
+             f"Sample: {s['matches']} matches; {s['wins']} wins, {s['draws']} draws, {s['losses']} losses.", "",
+             "| Metric | Liverpool | Other-team benchmark | Valid Liverpool matches |", "|---|---:|---:|---:|"]
+    for field, name in (("goals_for", "Goals per match"), ("goals_against", "Goals conceded per match"), ("xg_for", "xG per match"), ("xg_against", "xGA per match"), ("shots_for", "Shots per match")):
         lines.append(f"| {name} | {fmt(s[field+'_per_match'])} | {fmt(report['benchmark'][field+'_per_match'])} | {s[field+'_n']} |")
-    lines += ["", "## 比赛线索", ""]
+    lines += ["", "## Match signals", ""]
     if not report["signals"]:
-        lines += ["当前筛选下没有触发规则，或有效样本未达到 8 场；这不表示阵容没有缺陷。", ""]
+        lines += ["No rules were triggered under these filters, or fewer than eight valid matches were available. This does not establish that the squad has no weaknesses.", ""]
     for signal in report["signals"]:
-        lines += [f"- **{signal['title']}**：{fmt(signal['actual'])}，同期基准 {fmt(signal['benchmark'])}；规则：{signal['rule']}。{signal['interpretation']}。", ""]
+        lines += [f"- **{signal['title']}**: {fmt(signal['actual'])}; benchmark {fmt(signal['benchmark'])}; rule: {signal['rule']}. {signal['interpretation']}.", ""]
     roles = report["roles"]
-    lines += ["## 阵容证据", "", f"完整出场数据：{roles['complete_matches']}/{roles['eligible_matches']} 场（双方无红牌且已知红牌状态）。", "",
-              "当前系统只输出位置核查优先级，不自动认定应买哪个位置。", "",
-              "| 位置 | 已用人数 | 主力分钟占比 | 核查优先级 |", "|---|---:|---:|---|"]
+    lines += ["## Squad evidence", "", f"Complete appearance data: {roles['complete_matches']}/{roles['eligible_matches']} matches with confirmed no-red-card status for both teams.", "",
+              "The system prioritizes roles for review; it does not automatically identify a position to recruit.", "",
+              "| Role | Players used | Leading player's minute share | Review priority |", "|---|---:|---:|---|"]
     for r in roles["rows"]:
-        share = "缺失" if r["top_share"] is None else f"{r['top_share']:.1%}"
-        lines.append(f"| {r['name']} | {r['players_used'] if r['minutes'] else '缺失'} | {share} | {r['review_priority']} |")
-    lines += ["", "## 解释限制", ""] + [f"- {limit}" for limit in report["limits"]]
-    lines += ["", f"数据来源：[Football-Data.co.uk]({report['source_url']})", ""]
+        share = "Missing" if r["top_share"] is None else f"{r['top_share']:.1%}"
+        lines.append(f"| {r['name']} | {r['players_used'] if r['minutes'] else 'Missing'} | {share} | {r['review_priority']} |")
+    lines += ["", "## Interpretation limits", ""] + [f"- {limit}" for limit in report["limits"]]
+    lines += ["", f"Data source: [Football-Data.co.uk]({report['source_url']})", ""]
     if report.get("input_sha256"):
-        lines += [f"输入快照 SHA-256：`{report['input_sha256']}`", ""]
+        lines += [f"Input snapshot SHA-256: `{report['input_sha256']}`", ""]
     return "\n".join(lines)

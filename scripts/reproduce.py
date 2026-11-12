@@ -25,7 +25,7 @@ def git_state():
 
 
 def main():
-    parser = argparse.ArgumentParser(description="验证固定数据输入并重建基线报告；不访问网络")
+    parser = argparse.ArgumentParser(description="Verify a frozen input and rebuild baseline reports without network access")
     parser.add_argument("--manifest", type=Path, default=ROOT / "reproducibility/baseline.json")
     parser.add_argument("--csv", type=Path, default=ROOT / "data/local/E0-2627.csv")
     parser.add_argument("--output", type=Path, default=ROOT / "reports/reproduced")
@@ -33,9 +33,9 @@ def main():
     try:
         manifest = json.loads(args.manifest.read_text(encoding="utf-8"))
         if not args.csv.exists():
-            raise ValueError("缺少固定输入。请先运行 make data，或恢复自己保存的原始 CSV 归档")
+            raise ValueError("Frozen input is missing. Run make data or restore your archived original CSV")
         if sha256(args.csv) != manifest["source"]["sha256"]:
-            raise ValueError("输入 SHA-256 与基线不同；停止复现，不会把更新的数据当作原版本")
+            raise ValueError("Input SHA-256 differs from the baseline; reproduction stopped rather than using updated data as the original version")
         # Report paths are explicit so invocation does not depend on the shell cwd.
         subprocess.run([sys.executable, str(ROOT / "scripts/report.py"), "--csv", str(args.csv.resolve()),
                         "--as-of", manifest["analysis"]["as_of"], "--output", str(args.output.resolve())], check=True)
@@ -50,10 +50,10 @@ def main():
         }
         (args.output / "run_metadata.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         if mismatch:
-            raise ValueError("报告与基线不一致：" + ", ".join(mismatch) + "；请审查代码或环境差异，勿直接覆盖基线")
-        print("复现通过：输入快照和全部报告 SHA-256 均与基线一致。")
+            raise ValueError("Reports differ from the baseline: " + ", ".join(mismatch) + "; review code or environment differences before changing the baseline")
+        print("Reproduction passed: the input snapshot and all report SHA-256 hashes match the baseline.")
     except (OSError, ValueError, KeyError, subprocess.CalledProcessError) as exc:
-        raise SystemExit(f"复现未通过：{exc}") from exc
+        raise SystemExit(f"Reproduction failed: {exc}") from exc
 
 
 if __name__ == "__main__":

@@ -16,8 +16,9 @@
     "liverpool_matches": 10
   },
   "outputs": {
-    "report.md": "def4d870d17f7ba4a8d2173f61c54e368af6905387b719934ac043448921c2d7",
-    "report.json": "0dfd630b4c9270b4ac2014ba24f31fe2fbdef05ed94c58ef83ee4a53930db48d",
+    "report.md": "62b28dc043b93f9261d92cd667cf8e46a6e87c6ccff7f36a9a5e16c98200ee28",
+    "report.json": "9594b610901df0a2222a6fafbd0535e938c55d4dd80d0e43f27c9b96668aea65",
     "match_ids.csv": "1ed0a52630d72dc1213e0ab6603dcc263c83c2cfc7851ea2695684124ae67f8c"
-  }
+  },
+  "report_language": "en"
 }

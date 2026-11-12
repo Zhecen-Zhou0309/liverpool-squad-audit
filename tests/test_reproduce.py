@@ -47,7 +47,7 @@ class ReproductionTests(unittest.TestCase):
         self.csv.write_bytes(self.csv.read_bytes() + b"\n")
         result = self.run_reproduction()
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("输入 SHA-256", result.stderr)
+        self.assertIn("Input SHA-256", result.stderr)
         self.assertFalse((self.folder / "actual/report.json").exists())
 
     def test_changed_expected_output_fails_and_records_the_mismatch(self):

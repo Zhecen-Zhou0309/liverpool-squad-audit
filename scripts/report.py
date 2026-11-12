@@ -12,7 +12,7 @@ from audit import DEFAULT_AS_OF, analyze, read_appearances, read_matches, to_mar
 
 
 def main():
-    parser = argparse.ArgumentParser(description="生成利物浦 2026–27 阵容诊断报告")
+    parser = argparse.ArgumentParser(description="Generate a Liverpool 2026-27 squad audit report")
     parser.add_argument("--csv", type=Path, default=ROOT / "data/local/E0-2627.csv")
     parser.add_argument("--as-of", type=date.fromisoformat, default=DEFAULT_AS_OF)
     parser.add_argument("--appearances", type=Path)
@@ -33,7 +33,7 @@ def main():
             writer = csv.DictWriter(file, fieldnames=["match_id", "date", "opponent", "venue"])
             writer.writeheader()
             writer.writerows({k: r[k] for k in writer.fieldnames} for r in report["matches"])
-        print(f"已生成 {args.output / 'report.md'}")
+        print(f"Generated {args.output / 'report.md'}")
     except (OSError, ValueError) as exc:
         raise SystemExit(str(exc)) from exc
 
