@@ -18,19 +18,30 @@
 
 ## 快速运行
 
-推荐 Python 3.12。macOS/Linux 在项目目录执行：
+参考环境为 Python 3.12.6（见 `.python-version`）。macOS/Linux 在项目目录执行：
 
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install -r requirements.txt
-python scripts/fetch_data.py
+python -m pip install -r requirements.lock
+python scripts/fetch_data.py --manifest reproducibility/baseline.json
 python -m streamlit run app.py
 ```
 
 Windows PowerShell 激活命令为 `.venv\Scripts\Activate.ps1`，其他步骤相同。也可直接用虚拟环境里的 Python。
 
 项目不会请求 API 密钥或付费账户。首次下载需要网络；之后可使用本地快照离线分析。
+
+完整复现流程：
+
+```bash
+make test
+make reproduce
+```
+
+`make reproduce` 会验证输入快照与三个输出文件的 SHA-256，并生成独立的运行版本记录。直接执行 `python scripts/fetch_data.py` 会下载源站当前文件；带 `--manifest` 才会要求与本版本的固定输入一致。源站若已修改历史记录，请恢复原始数据备份，不能仅靠网址重建旧版本。
+
+依赖锁记录传递依赖的包版本，未固定操作系统镜像和平台 wheel；详见 [复现说明](docs/REPRODUCIBILITY.md)。
 
 ### 不安装界面，只生成报告
 
@@ -118,18 +129,25 @@ python3 -m unittest discover -s tests -v
 
 ## 上传到 GitHub
 
-在 GitHub 新建一个空仓库，例如 `liverpool-squad-audit`，不添加初始文件。然后在本项目目录执行（替换用户名）：
+本项目已在本地初始化 Git，并将初始功能导入和可复现性改进分别提交。要保留这些历史，请使用当前本地项目文件夹，或从 Git bundle 克隆；网页上传文件与普通源码 ZIP 不包含这些提交历史。
+
+在 [GitHub 新建仓库](https://github.com/new?name=liverpool-squad-audit)，Owner 选择 `Zhecen-Zhou0309`，名称为 `liverpool-squad-audit`。选择可见性，不初始化 README、License 或 `.gitignore`，然后创建空仓库。
+
+在当前本地项目目录执行：
 
 ```bash
-git init
-git add .
-git commit -m "Add Liverpool squad audit prototype"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/liverpool-squad-audit.git
+git remote -v
 git push -u origin main
+git push origin v0.1.0
 ```
 
-上传前先看 `git status`：本地原始数据、虚拟环境、密钥与生成的报告已通过 `.gitignore` 排除。发布的是独立项目仓库；本版无需 GitHub Pages。Python 界面通过本地命令启动。
+当前本地项目的 origin 已设为 `https://github.com/Zhecen-Zhou0309/liverpool-squad-audit.git`；从 bundle 克隆时需先用 `git remote set-url origin` 改成这个地址。若普通源码 ZIP 解压后运行 `git status` 提示不是仓库，说明它不含历史，请改用 bundle。
+
+命令行登录和 GitHub App 连接分别管理。若 push 要求认证，可先创建空仓库，再通过 GitHub Desktop 登录、添加当前本地仓库并推送；不要用账号密码代替 Git 的 HTTPS 认证。详见 [GitHub 上传指南](docs/GITHUB.md)。
+
+上传前先看 `git status`：本地原始数据、虚拟环境、密钥与生成报告已通过 `.gitignore` 排除。发布的是独立项目仓库；本版无需 GitHub Pages。Python 界面通过本地命令启动。
+
+后续开发流程见 [CONTRIBUTING.md](CONTRIBUTING.md)。每个 commit 对应一个可解释的变化；可复现性由代码版本、环境、数据和运行流程共同保证。
 
 ## 来源
 
